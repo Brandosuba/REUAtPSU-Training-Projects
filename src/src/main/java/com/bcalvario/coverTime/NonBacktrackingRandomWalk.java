@@ -10,10 +10,11 @@ import java.util.Random;
 /**
  *
  */
+
 public class NonBacktrackingRandomWalk implements WalkStrategy {
     @Override
     public String getName(){
-        return "Non-Backtracking Random Walk";
+        return "Non-Backtracking";
     }
     @Override
     public int coverTime(Graph<Integer, DefaultEdge> graph, Random rand){
