@@ -16,12 +16,10 @@ public final class GraphUtil {
     private GraphUtil() {}
     public static List<Integer> cList(int n) {
         int complete = n * (n - 1) / 2;
-        Set<Integer> set = new HashSet<>(Arrays.asList(n - 1,
-                (int) Math.round(1.5 * n),
-                2 * n,
-                3 * n
-        ));
-        if (complete < 4 * n) set.add(complete);
+        Set<Integer> set = new HashSet<>(Arrays.asList(n - 1, (int) Math.round(1.5 * n), 2 * n, 3 * n));
+        if (complete < 4 * n){
+            set.add(complete);
+        }
         return set.stream().sorted().collect(Collectors.toList());
     }
     public static boolean isConnected(Graph<Integer, DefaultEdge> g, int n) {
@@ -32,7 +30,9 @@ public final class GraphUtil {
             int v = q.removeFirst();
             for (DefaultEdge e : g.edgesOf(v)) {
                 int u = Graphs.getOppositeVertex(g, e, v);
-                if (seen.add(u)) q.addLast(u);
+                if (seen.add(u)) {
+                    q.addLast(u);
+                }
             }
         }
         return seen.size() == n;
