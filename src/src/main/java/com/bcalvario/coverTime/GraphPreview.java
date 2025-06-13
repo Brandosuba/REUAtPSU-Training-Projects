@@ -26,15 +26,15 @@ public final class GraphPreview {
         Map<String, Object> vertexStyle = stylesheet.getDefaultVertexStyle();
         vertexStyle.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
         vertexStyle.put(mxConstants.STYLE_FONTSIZE, 14);
-        vertexStyle.put(mxConstants.STYLE_FONTCOLOR, "#FFFFFF"); // White text
-        vertexStyle.put(mxConstants.STYLE_FILLCOLOR, "#3498DB"); // A pleasant blue
+        vertexStyle.put(mxConstants.STYLE_FONTCOLOR, "#FFFFFF");
+        vertexStyle.put(mxConstants.STYLE_FILLCOLOR, "#3498DB");
         vertexStyle.put(mxConstants.STYLE_STROKECOLOR, "#2E86C1");
         vertexStyle.put(mxConstants.STYLE_STROKEWIDTH, 2);
 
         Map<String, Object> edgeStyle = stylesheet.getDefaultEdgeStyle();
         edgeStyle.put(mxConstants.STYLE_EDGE, mxEdgeStyle.EntityRelation);
         edgeStyle.put(mxConstants.STYLE_ROUNDED, true);
-        edgeStyle.put(mxConstants.STYLE_ENDARROW, mxConstants.NONE); // Keep arrows off
+        edgeStyle.put(mxConstants.STYLE_ENDARROW, mxConstants.NONE);
         edgeStyle.put(mxConstants.STYLE_STROKECOLOR, "#566573");
 
         mxCircleLayout layout = new mxCircleLayout(vis);
