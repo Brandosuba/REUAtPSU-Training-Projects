@@ -53,12 +53,11 @@ public final class GraphPreview {
 
     /**
      * Creates a single window to display and animate two graph simulations side-by-side.
-     *
-     * @param g1     The first graph.
-     * @param s1     The walk strategy for the first graph.
+     * @param g1 The first graph.
+     * @param s1 The walk strategy for the first graph.
      * @param title1 The title for the first panel.
-     * @param g2     The second graph.
-     * @param s2     The walk strategy for the second graph.
+     * @param g2 The second graph.
+     * @param s2 The walk strategy for the second graph.
      * @param title2 The title for the second panel.
      */
     public static void animateTwoWalksSideBySide(
@@ -68,28 +67,23 @@ public final class GraphPreview {
         JFrame mainFrame = new JFrame("Side-by-Side Comparison");
         mainFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         mainFrame.setLayout(new GridLayout(1, 2)); // 1 row, 2 columns
-
         //left panel
         mxGraphComponent comp1 = createVisualComponent(g1);
         JPanel panel1 = new JPanel(new BorderLayout());
         panel1.add(new JLabel(title1, SwingConstants.CENTER), BorderLayout.NORTH);
         panel1.add(comp1, BorderLayout.CENTER);
         mainFrame.add(panel1);
-
         //right
         mxGraphComponent comp2 = createVisualComponent(g2);
         JPanel panel2 = new JPanel(new BorderLayout());
         panel2.add(new JLabel(title2, SwingConstants.CENTER), BorderLayout.NORTH);
         panel2.add(comp2, BorderLayout.CENTER);
         mainFrame.add(panel2);
-
         //animation threads
         JGraphXAdapter<Integer, DefaultEdge> vis1 = (JGraphXAdapter<Integer, DefaultEdge>) comp1.getGraph();
         JGraphXAdapter<Integer, DefaultEdge> vis2 = (JGraphXAdapter<Integer, DefaultEdge>) comp2.getGraph();
-
         new Thread(() -> runAnimation(g1, s1, vis1, comp1)).start();
         new Thread(() -> runAnimation(g2, s2, vis2, comp2)).start();
-
         mainFrame.setPreferredSize(new Dimension(1600, 800));
         mainFrame.pack();
         mainFrame.setLocationByPlatform(true);
@@ -140,7 +134,6 @@ public final class GraphPreview {
     /**
      * Creates and styles a visual graph component from a JGraphT graph.
      * This consolidates the adapter creation, styling, and layout logic.
-     *
      * @param g The JGraphT graph.
      * @return A fully configured mxGraphComponent ready for display.
      */

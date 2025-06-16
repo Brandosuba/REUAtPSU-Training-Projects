@@ -60,9 +60,8 @@ public final class GraphUtil {
      * allows for multiple edges between the same two nodes and self-loops.
      * The algorithm first creates a spanning tree to guarantee connectivity, then adds
      * the remaining edges randomly.
-     *
-     * @param n   Number of nodes (vertices).
-     * @param c   Number of connections (edges).
+     * @param n Number of nodes (vertices).
+     * @param c Number of connections (edges).
      * @param rng Random number generator.
      * @return A connected random multigraph.
      */
@@ -91,9 +90,8 @@ public final class GraphUtil {
      * Generates a connected random simple graph.
      * A simple graph has no self-loops or multiple edges between the same two nodes.
      * The process is similar to multigraph generation but with added constraints.
-     *
-     * @param n   Number of nodes.
-     * @param c   Number of connections (edges).
+     * @param n Number of nodes.
+     * @param c Number of connections (edges).
      * @param rng Random number generator.
      * @return A connected random simple graph.
      */
