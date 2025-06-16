@@ -29,7 +29,6 @@ public class NonBacktrackingRandomWalk implements WalkStrategy {
         if (n <= 1) {
             return 0;
         }
-
         // Start at a random node.
         int current = rand.nextInt(n);
         // 'previous' stores the last visited node to prevent backtracking. Initialized to -1.
@@ -37,7 +36,6 @@ public class NonBacktrackingRandomWalk implements WalkStrategy {
         boolean[] seen = new boolean[n];
         seen[current] = true;
         int visited = 1, steps = 0;
-
         while (visited < n) {
             // Get the list of neighbors of the current node.
             List<Integer> neighbors = Graphs.neighborListOf(graph, current);
@@ -46,12 +44,10 @@ public class NonBacktrackingRandomWalk implements WalkStrategy {
             if (neighbors.size() > 1 && previous != -1) {
                 neighbors.remove(Integer.valueOf(previous));
             }
-
             // Update the previous node before moving to the next.
             previous = current;
             // Choose the next node randomly from the (potentially modified) neighbor list.
             current = neighbors.get(rand.nextInt(neighbors.size()));
-
             // If the new node is unvisited, mark it as seen.
             if (!seen[current]) {
                 seen[current] = true;

@@ -69,7 +69,6 @@ public final class GraphUtil {
     public static Graph<Integer, DefaultEdge> connectedRandomMultigraph(int n, int c, Random rng) {
         Graph<Integer, DefaultEdge> g = new Pseudograph<>(DefaultEdge.class);
         IntStream.range(0, n).forEach(g::addVertex);
-
         // create a spanning tree to ensure connectivity (N-1 edges)
         // This is a common algorithm for generating connected random graphs.
         List<Integer> verts = IntStream.range(0, n).boxed().collect(Collectors.toList());
@@ -79,7 +78,6 @@ public final class GraphUtil {
             int v = verts.get(rng.nextInt(i)); // Connect to a random, previously-added vertex.
             g.addEdge(u, v);
         }
-
         // Add the remaining edges randomly
         while (g.edgeSet().size() < c) {
             int u = rng.nextInt(n);
