@@ -1,4 +1,4 @@
 package com.bcalvario.coverTime.agent;
 
-public class TrafficSimulation {
+public class GridCell {
 }
