@@ -35,6 +35,6 @@ public class AgentMain {
                 System.out.println("All Cities have been visited.");
             }
         });
-        timer.start();
+        timer.start();//
     }
 }

@@ -18,4 +18,4 @@ public class EnvironmentPanel extends JPanel {
         //todo implement getgrid
 //        GridCell[][] grid = environment.getGrid();
     }
-}
+}//
