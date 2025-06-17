@@ -1,1 +1,0 @@
-// Manage the grid, agents, & overall state of simulation
