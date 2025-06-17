@@ -1,7 +1,7 @@
 # Mini Project 2/3: Extending a Random Network Model to a Car-Road ABM. 
-The random network represents a road network connecting cities where nodes are cities and roads are links. 
-The virtual environment in the ABM is composed of a set of roads, cities, and empty space (forest). 
-An agent in the ABM is a car that drives on the road (cannot drive in forest).  
+The random network represents a road network connecting cities where nodes are cities and roads are links.<br> 
+The virtual environment in the ABM is composed of a set of roads, cities, and empty space (forest). <br>
+An agent in the ABM is a car that drives on the road (cannot drive in forest).  <br> 
 
 **Understanding the ABM** <br>
 We used a grid-world approach: the environment is split up into a # of grid cells. 
