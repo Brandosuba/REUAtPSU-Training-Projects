@@ -1,32 +1,22 @@
 package com.bcalvario.coverTime.agent;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-// Car driving on road network
-// Has a current position & memory of visited cities
 public class CarAgent {
-    // Declare car agent properties
     private static int nextId = 0;
     private final int id;
     private Point location;
     private Point destination;
     private List<Point> currentPath;
-    //    private Color color;
     private final Set<Point> visitedCities;
     private Integer previousCity;
-
-    // Constructor for CarAgent object
-    public CarAgent(int startX, int startY, Point startLocation, Set<Point> visitedCities, Integer previousCity) {
-        this.id = nextId++;
-        this.location = new Point(startLocation);
-        this.destination = new Point(startLocation);
-        this.visitedCities = new HashSet<>();
-    }
+    private Color color;
+    private boolean isCrashed;
+    private int crashCooldown;
 
     public CarAgent(Point startLocation) {
         this.id = nextId++;
@@ -35,46 +25,62 @@ public class CarAgent {
         this.currentPath = new LinkedList<>();
         this.visitedCities = new HashSet<>();
         this.previousCity = null;
-    }// CarAgent
+        this.color = Color.YELLOW; // Default color
+        this.isCrashed = false;
+        this.crashCooldown = 0;
+    }
 
-    // Update a car agent's position
-    public void updatePosition() {
-//        if (isAtDestination()) {
-//            return;
-//        }
-//        int dx = Integer.compare(destination.x, location.x);
-//        int dy = Integer.compare(destination.y, location.y);
-//        location.translate(dx, dy);
-        if(!currentPath.isEmpty()) {
-            this.location = currentPath.remove(0);
+    public void updatePosition(GridCell[][] grid) {
+        // If crashed, decrement cooldown and do not move.
+        if (isCrashed) {
+            crashCooldown--;
+            if (crashCooldown <= 0) {
+                isCrashed = false;
+                this.color = Color.YELLOW; // Return to normal color
+            }
+            return;
+        }
+
+        if (currentPath != null && !currentPath.isEmpty()) {
+            // Determine movement speed based on cell type
+            int moves = 1;
+            CellType currentCellType = grid[location.x][location.y].getType();
+            if (currentCellType == CellType.FREEWAY) {
+                moves = 3; // Move 3 steps on a freeway for faster travel
+            }
+
+            // Move the agent along the path
+            for (int i = 0; i < moves && !currentPath.isEmpty(); i++) {
+                this.location = currentPath.remove(0);
+            }
         }
     }
 
-    public void setDestination(Point newLocation, Integer currentCity) {
-        this.destination = newLocation;
-        this.previousCity = currentCity;
-    }
-    public void setPath(List<Point> path, Integer previousCities) {
+    public void setPath(List<Point> path, Integer previousCity) {
         this.currentPath = new LinkedList<>(path);
-        if(!path.isEmpty()) {
+        if (path != null && !path.isEmpty()) {
             this.destination = path.get(path.size() - 1);
         }
-        this.previousCity = previousCities;
+        this.previousCity = previousCity;
+    }
+
+    public void crash() {
+        this.isCrashed = true;
+        this.crashCooldown = 50; // Immobilized for 50 ticks
+        this.color = Color.RED; // Change color to indicate a crash
     }
 
     public boolean isAtDestination() {
         return location.equals(destination);
-    }// updatePosition
+    }
 
-    //     Add a visited city to a car agent's memory of visited cities
     public void visitCity(Point cityLocation) {
         visitedCities.add(cityLocation);
-    } // addCity
+    }
 
-    // Check if a car agent has visited a city
     public Set<Point> hasVisited() {
         return visitedCities;
-    } // hasVisited
+    }
 
     public Point getLocation() {
         return location;
@@ -84,7 +90,11 @@ public class CarAgent {
         return previousCity;
     }
 
-    public void setPrevCity(int cityId) {
-        this.previousCity = cityId;
+    public Color getColor() {
+        return color;
     }
-} // CarAgent
+
+    public boolean isCrashed() {
+        return isCrashed;
+    }
+}
