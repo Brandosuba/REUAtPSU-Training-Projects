@@ -29,6 +29,15 @@ public class Environment {
 //        cityLocations.forEach((cityId,point)->{ grid[point.x][point.y] = new GridCell(CellType.CITY)})
     }
     private Map<Integer,Point> generateCityLocations(int width, int height, int numCities){
+        Map<Integer,Point>locations = new HashMap<>();
+        int minDistance = (width * height) / (numCities > 1?numCities:2);
+        for(int i = 0; i<numCities; i++){
+            Point p;
+            boolean tooClose;
+            do{
+//                p = new Point(rand.nextInt())
+            }
+        }
         return Map.of();
     }
 //    public boolean allVisited(){
