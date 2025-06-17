@@ -18,10 +18,7 @@ public class Environment {
     private final int height;
     private final Random random = new Random();
 
-
-
-
-    public Environment(int width, int height,int agentCount, Graph<Integer, DefaultEdge>network) {
+    public Environment(int width, int height, int agentCount, Graph<Integer, DefaultEdge> network) {
         this.width = width;
         this.height = height;
         this.grid = new GridCell[width][height];
@@ -29,120 +26,145 @@ public class Environment {
         this.network = network;
         this.cityLocations = new HashMap<>();
         this.locationToCityId = new HashMap<>();
+        initialize();
+        generateCityLocations();
+        generateRoads();
+        spawnAgents(agentCount);
     }
+
     public void initialize() {
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 grid[x][y] = new GridCell(CellType.FOREST);
             }
         }
     }
-    private void generateCityLocations(){
-        int numCities = network.vertexSet().size();
-        int minDistance = (int) ((width*height)/(numCities > 1 ? numCities * 0.5 : 1));
 
-        for(int cityId :network.vertexSet()){
+    /**
+     * Places cities on the grid and sets their cell type to CITY.
+     */
+    private void generateCityLocations() {
+        int numCities = network.vertexSet().size();
+        double idealSeparation = Math.sqrt((double)(width * height) / numCities);
+        int minDistance = (int)(idealSeparation * 0.8);
+
+        for (int cityId : network.vertexSet()) {
             Point p;
             boolean tooClose;
-            do{
+            int tries = 0;
+            do {
                 p = new Point(random.nextInt(width - 4) + 2, random.nextInt(height - 4) + 2);
                 tooClose = false;
-                for(Point existingPoint : cityLocations.values()){
-                    if(p.distance(existingPoint) < minDistance){
+                for (Point existingPoint : cityLocations.values()) {
+                    if (p.distance(existingPoint) < minDistance) {
                         tooClose = true;
                         break;
                     }
                 }
-            }while(tooClose);
+                tries++;
+                if (tries > 2000) {
+                    minDistance *= 0.95;
+                    tries = 0;
+                }
+            } while (tooClose);
             cityLocations.put(cityId, p);
             locationToCityId.put(p, cityId);
+            // This line is what makes a cell a city.
             grid[p.x][p.y].setType(CellType.CITY);
         }
     }
-    private void generateRoads(){
-        for(DefaultEdge edge : network.edgeSet()){
+
+    /**
+     * Generates the road network using a pathfinder.
+     */
+    private void generateRoads() {
+        for (DefaultEdge edge : network.edgeSet()) {
             Point p1 = cityLocations.get(network.getEdgeSource(edge));
             Point p2 = cityLocations.get(network.getEdgeTarget(edge));
-
-            int x1 = p1.x,
-                    y1 = p1.y;
-            int x2 = p2.x,
-                    y2 = p2.y;
-            int dx = Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
-            int dy = -Math.abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
-            int err = dx + dy,e2;
-            while(true){
-                if (grid[x1][y1].getType() == CellType.FOREST){
-                    grid[x1][y1].setType(CellType.ROAD);
-                }
-                if(x1 == x2 && y1 == y2) {
-                    break;
-                }
-                e2 = 2*err;
-                if(e2 >= dy){
-                    err+=dy;
-                    x1+=sx;
-                }
-                if(e2<=dx){
-                    err+=dx;
-                    y1+=sy;
+            List<Point> roadPath = Pathfinder.findPathForRoads(p1, p2, grid);
+            for (Point roadPoint : roadPath) {
+                if (grid[roadPoint.x][roadPoint.y].getType() == CellType.FOREST) {
+                    grid[roadPoint.x][roadPoint.y].setType(CellType.ROAD);
                 }
             }
         }
     }
-    public void step(){
-        for(CarAgent agent : agents){
-            if(agent.isAtDestination()){
+
+    public void step() {
+        for (CarAgent agent : agents) {
+            if (agent.isAtDestination()) {
                 handleArrival(agent);
             }
             agent.updatePosition();
         }
     }
-    private void handleArrival(CarAgent agent){
+
+
+    private void handleArrival(CarAgent agent) {
         Point currentLocation = agent.getLocation();
-        if(locationToCityId.containsKey(currentLocation)){
+        if (locationToCityId.containsKey(currentLocation)) {
             int cityId = locationToCityId.get(currentLocation);
-            agent.addCity(currentLocation);
-            List<Integer> neighborCity = Graphs.neighborListOf(network,cityId);
-            if(neighborCity.isEmpty()){
-                return;
+            agent.visitCity(currentLocation);
+
+            List<Integer> neighborCities = Graphs.neighborListOf(network, cityId);
+            if(neighborCities.isEmpty()) return;
+
+            if (neighborCities.size() > 1 && agent.getPrevCity() != null) {
+                neighborCities.remove(agent.getPrevCity());
             }
-            if(neighborCity.size() > 1 && agent.getPrevCity() != null){
-                neighborCity.remove(agent.getPrevCity());
-            }
-            int destinationCity = neighborCity.get(random.nextInt(neighborCity.size()));
-            Point newDestination = cityLocations.get(destinationCity);
-            agent.setDestination(newDestination, cityId);
+
+            int destinationCityId = neighborCities.get(random.nextInt(neighborCities.size()));
+            Point newDestination = cityLocations.get(destinationCityId);
+
+            // Give the agent a path to follow
+            List<Point> path = Pathfinder.findPath(currentLocation, newDestination, grid);
+            agent.setPath(path, cityId);
         }
     }
+
     /*
  checks if the agents have visited every city.
   */
-    public boolean areAllVisited(){
+    public boolean areAllVisited() {
         Set<Point> visited = new HashSet<>();
-        for(CarAgent agent : agents){
+        for (CarAgent agent : agents) {
             visited.addAll(agent.hasVisited());
         }
         return visited.size() == cityLocations.size();
     }
+
     /*
     Creates the agents and places them at random starting cities.
      */
-    public void spawnAgents(int agentCount){
-        List<Integer>cityIds = new ArrayList<>(network.vertexSet());
-        for(int i = 0; i < agentCount; i++){
-            int startCityId = cityIds.get(cityIds.size()-1);
+    public void spawnAgents(int agentCount) {
+        List<Integer> cityIds = new ArrayList<>(network.vertexSet());
+        for (int i = 0; i < agentCount; i++) {
+            int startCity = cityIds.get(i % cityIds.size());
+            Point startLocation = cityLocations.get(startCity);
+            agents.add(new CarAgent(startLocation));
         }
     }
+    private int chooseNextCity(int currentCity,Integer previousCity) {
+        List<Integer> neighbor = Graphs.neighborListOf(network, currentCity);
+        if(neighbor.size() > 1 && previousCity != null) {
+            neighbor.remove(previousCity);
+        }
+        return neighbor.get(random.nextInt(neighbor.size()));
+
+    }
+
     public GridCell[][] getGrid() {
         return grid;
     }
+
     public List<CarAgent> getAgents() {
         return agents;
     }
+
     public int getWidth() {
         return width;
     }
+
     public int getHeight() {
         return height;
     }
