@@ -4,4 +4,3 @@ public enum CellType {
         ROAD,
         FOREST
     }
-}
