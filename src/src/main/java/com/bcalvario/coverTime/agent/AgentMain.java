@@ -16,25 +16,5 @@ public class AgentMain {
         final int GRID_WIDTH = 100;
         final int GRID_HEIGHT = 100;
 
-        Graph<Integer, DefaultEdge> graph = GraphUtil.connectedRandomSimpleGraph(NODE_COUNT, EDGE_COUNT, new Random());
-        Environment environment = new Environment(GRID_WIDTH,GRID_HEIGHT,graph,NUM_AGENTS);
-        EnvironmentPanel panel = new EnvironmentPanel(environment);
-
-        JFrame frame = new JFrame("ABM Environment - Vehicles");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(panel);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
-        Timer timer = new Timer(Constants.ANIMATION_DELAY, event -> {
-            environment.step();
-            panel.repaint();
-            if(environment.allVisited()){
-                ((Timer)event.getSource()).stop();
-                System.out.println("All Cities have been visited.");
-            }
-        });
-        timer.start();//
     }
 }
