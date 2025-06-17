@@ -4,7 +4,7 @@ The virtual environment in the ABM is composed of a set of roads, cities, and em
 An agent in the ABM is a car that drives on the road (cannot drive in forest).  <br> 
 
 **Understanding the ABM** <br>
-We used a grid-world approach: the environment is split up into a # of grid cells. 
-Agents (cars) can only move from one grid cell to the next. 
-Grid cells have a limit on how many cars/people can occupy them. 
-We also keep track of which cities cars have visited. 
+We used a grid-world approach: the environment is split up into a # of grid cells. <br>
+Agents (cars) can only move from one grid cell to the next. <br>
+Grid cells have a limit on how many cars/people can occupy them. <br>
+We also keep track of which cities cars have visited. <br>
