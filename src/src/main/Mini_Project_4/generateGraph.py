@@ -1,22 +1,28 @@
+"""
+generateGraph.py
+----------------
+Generates and visualizes adjacency matrices for graphs.
+
+- Includes functions for creating "perfect" and "noisy" datasets.
+- Includes a function to plot the "average" of a set of graphs as a heatmap.
+"""
 import random
 import numpy as np
-"""
-Brandon Calvario
-6/18/2025
-"""
+import matplotlib.pyplot as plt
 
-def generate_graph(nodes, directed):
-    """
-    Generates an adjacency matrix for a graph.
-    - nodes: number of nodes in the graph
-    - directed: boolean, True for directed, False for undirected
-    """
+
+def generate_graph(nodes: int, directed: bool) -> np.ndarray:
+    """Generates a single, perfect adjacency matrix."""
     matrix = np.zeros((nodes, nodes), dtype=int)
+
     if directed:
-        for i in range(nodes):
-            for j in range(nodes):
-                if i != j:
-                    matrix[i, j] = random.choice([0, 1])
+        while True:
+            for i in range(nodes):
+                for j in range(nodes):
+                    if i != j:
+                        matrix[i, j] = random.choice([0, 1])
+            if not np.array_equal(matrix, matrix.T):
+                break
     else:  # Undirected
         for i in range(nodes):
             for j in range(i, nodes):
@@ -28,23 +34,53 @@ def generate_graph(nodes, directed):
                     matrix[j, i] = val
     return matrix
 
-def create_dataset(num_samples, nodes):
-    """
-    Creates a dataset of graphs.
-    - num_samples: total number of graphs to generate
-    - nodes: number of nodes in each graph
-    """
-    data = []
-    for i in range(num_samples // 2):
-        # Directed graph, label 0
-        adj_matrix_dir = generate_graph(nodes, True)
-        input_vector_dir = adj_matrix_dir.reshape(nodes * nodes, 1)
-        data.append((input_vector_dir, 0))
+"""
+Generates a single 'noisy' or 'imperfect' adjacency matrix to create a
+more realistic and challenging classification problem.
+"""
+def generate_noisy_graph(nodes: int, directed: bool) -> np.ndarray:
+    if directed:
+        matrix = generate_graph(nodes, directed=True)
+        for i in range(nodes):
+            for j in range(nodes):
+                if matrix[i, j] == 1 and random.random() < 0.4:
+                    matrix[j, i] = 1
+        return matrix
+    else:
+        matrix = generate_graph(nodes, directed=False)
+        for _ in range(2):
+            r, c = random.randint(0, nodes - 1), random.randint(0, nodes - 1)
+            if r != c:
+                matrix[r, c] = 1 - matrix[r, c]
+        return matrix
 
-        # Undirected graph, label 1
-        adj_matrix_undir = generate_graph(nodes, False)
-        input_vector_undir = adj_matrix_undir.reshape(nodes * nodes, 1)
-        data.append((input_vector_undir, 1))
+
+def create_dataset(nodes: int, per_class: int, noisy: bool = False):
+    data = []
+    generator = generate_noisy_graph if noisy else generate_graph
+
+    for _ in range(per_class):
+        data.append((generator(nodes, True).reshape(nodes ** 2, 1), 0))
+        data.append((generator(nodes, False).reshape(nodes ** 2, 1), 1))
 
     random.shuffle(data)
     return data
+
+"""
+Calculates and plots the average of a set of graph matrices as a heatmap.
+This shows the probability of a connection at each position.
+"""
+def plot_average_graph(graphs, nodes, title):
+    if not graphs:
+        print(f"No graphs to average for '{title}'")
+        return
+
+    avg_matrix = sum(graphs).reshape(nodes, nodes) / len(graphs)
+
+    plt.figure(figsize=(6, 6))
+    plt.imshow(avg_matrix, cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Connection Probability')
+    plt.title(title)
+    plt.xlabel("Node")
+    plt.ylabel("Node")
+    plt.show()

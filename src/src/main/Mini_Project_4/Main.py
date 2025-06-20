@@ -1,77 +1,151 @@
-import network as ntwrk
-import generateGraph as generateG
-import numpy as np
-import matplotlib.pyplot as plt
 """
-Brandon Calvario
-6/18/2025
+Main.py
+---------------------------------
+An improved experiment runner for the graph classification project.
+
+Key Features:
+- Fulfills all original project criteria.
+- Automatically tests multiple network architectures and hyperparameters.
+- Reports best AND worst performing configurations for comparison.
+- Can use "perfect" or "noisy" datasets.
+- Evaluates performance using accuracy and a confusion matrix.
+- Plots learning curves for the best and worst performing networks.
+- Visualizes the "average" directed and undirected graphs as heatmaps.
 """
 
-def plot_mse(cost_history, epochs, title):
-    """
-    Plots the Mean Square Error (MSE) over epochs.
-    - cost_history: A list of MSE values, one for each epoch.
-    - epochs: The total number of epochs.
-    - title: The title for the plot.
-    """
-    plt.figure()
-    plt.plot(range(epochs), cost_history, marker='o', linestyle='-')
+import matplotlib.pyplot as plt
+import numpy as np
+from collections import defaultdict
+
+# Make sure you have the updated network.py from the student experiment
+# Or ensure the original vectorize_result takes num_classes
+import network as ntwrk
+import generateGraph as generateG
+
+def plot_curve(values, title, ylabel):
+    """Utility function to plot learning curves."""
+    plt.figure(figsize=(8, 5))
+    plt.plot(range(len(values)), values, marker='.', linestyle='-')
+    plt.xlabel("Epoch")
+    plt.ylabel(ylabel)
     plt.title(title)
-    plt.xlabel('Epochs')
-    plt.ylabel('Mean Square Error (MSE)')
     plt.grid(True)
     plt.show()
 
 
+def get_predictions(net, data):
+    """Get network predictions for a given dataset."""
+    return [np.argmax(net.feedforward(x)) for x, y in data]
+
+def calculate_confusion_matrix(predictions, labels):
+    """Calculates and prints a confusion matrix."""
+    matrix = defaultdict(int)
+    for pred, actual in zip(predictions, labels):
+        matrix[(pred, actual)] += 1
+
+    print("\nConfusion Matrix for Best Network (Prediction, Actual):")
+    print("-------------------------------------------------------")
+    # Label 0: Directed, Label 1: Undirected
+    print(f"Predicted Directed,   Actual Directed:   {matrix[(0, 0)]}")
+    print(f"Predicted Undirected, Actual Directed:   {matrix[(1, 0)]}")
+    print(f"Predicted Directed,   Actual Undirected: {matrix[(0, 1)]}")
+    print(f"Predicted Undirected, Actual Undirected: {matrix[(1, 1)]}")
+    print("-------------------------------------------------------")
+
+
+def run_hyperparameter_search(num_nodes, use_noisy_data=False):
+    """
+    Trains and evaluates multiple network configurations to find the best one.
+    This directly addresses the criteria to "play with the network parameters".
+    """
+    print(f"--- Starting Search for {num_nodes}x{num_nodes} graphs (Noisy Data: {use_noisy_data}) ---")
+
+    # --- 1. Create a stable dataset for the search ---
+    n_inputs = num_nodes ** 2
+    train_set = generateG.create_dataset(num_nodes, per_class=500, noisy=use_noisy_data)
+    test_set = generateG.create_dataset(num_nodes, per_class=200, noisy=use_noisy_data)
+
+    train_data = [(x, ntwrk.vectorize_result(y, 2)) for x, y in train_set]
+    test_data = [(x, y) for x, y in test_set]
+    test_labels = [y for x, y in test_data]
+
+    # --- 2. Define search space ---
+    hidden_layer_configs = [[10], [30], [15, 5]]
+    learning_rates = [0.1, 0.5, 1.0]
+    epochs = 15
+
+    best_accuracy = 0
+    worst_accuracy = 1.0
+    best_config, worst_config = {}, {}
+    best_history, worst_history, best_net = None, None, None
+
+    # --- 3. Run the search loop ---
+    for hidden_layers in hidden_layer_configs:
+        for eta in learning_rates:
+            print(f"\nTesting Config: Hidden={hidden_layers}, LR={eta}")
+
+            net = ntwrk.Network([n_inputs] + hidden_layers + [2])
+
+            cost_hist, acc_hist = net.SGD(
+                train_data, epochs, mini_batch_size=10, eta=eta, test_data=test_data
+            )
+
+            final_accuracy = acc_hist[-1]
+            current_config = {'hidden': hidden_layers, 'eta': eta, 'epochs': epochs}
+
+            if final_accuracy > best_accuracy:
+                best_accuracy = final_accuracy
+                best_config = current_config
+                best_history = (cost_hist, acc_hist)
+                best_net = net
+
+            if final_accuracy < worst_accuracy:
+                worst_accuracy = final_accuracy
+                worst_config = current_config
+                worst_history = (cost_hist, acc_hist)
+
+
+    # --- 4. Report the results ---
+    print("\n=======================================================")
+    print(f"Search Complete for {num_nodes}x{num_nodes} graphs:")
+    print("\n--- Best Configuration ---")
+    print(f"  - Architecture: {[n_inputs] + best_config['hidden'] + [2]}")
+    print(f"  - Learning Rate: {best_config['eta']}")
+    print(f"  - Final Accuracy: {best_accuracy:.3f}")
+
+    print("\n--- Worst Configuration ---")
+    print(f"  - Architecture: {[n_inputs] + worst_config['hidden'] + [2]}")
+    print(f"  - Learning Rate: {worst_config['eta']}")
+    print(f"  - Final Accuracy: {worst_accuracy:.3f}")
+    print("=======================================================")
+
+    # Analyze the best network with a confusion matrix
+    predictions = get_predictions(best_net, test_data)
+    calculate_confusion_matrix(predictions, test_labels)
+
+    # Plot the learning curves for the best network
+    plot_curve(best_history[0], f"Best MSE ({num_nodes}x{num_nodes})", "MSE")
+    plot_curve(best_history[1], f"Best Accuracy ({num_nodes}x{num_nodes})", "Accuracy")
+
+    # Plot the learning curves for the worst network
+    if worst_history:
+        plot_curve(worst_history[0], f"Worst MSE ({num_nodes}x{num_nodes})", "MSE")
+        plot_curve(worst_history[1], f"Worst Accuracy ({num_nodes}x{num_nodes})", "Accuracy")
+
+    # --- 5. Visualize the average graphs ---
+    directed_graphs = [x for x, y in test_set if y == 0]
+    undirected_graphs = [x for x, y in test_set if y == 1]
+
+    # NEW WAY (what you are replacing it with)
+    generateG.plot_average_graph(directed_graphs, num_nodes, f"Average Directed Graph ({num_nodes}x{num_nodes})")
+    generateG.plot_average_graph(undirected_graphs, num_nodes, f"Average Undirected Graph ({num_nodes}x{num_nodes})")
+
 if __name__ == "__main__":
-    # param for 4x4
-    print("--- Starting experiment with 4x4 graphs ---")
-    NUM_NODES_4 = 4
-    INPUT_NEURONS_4 = NUM_NODES_4 * NUM_NODES_4
-    OUTPUT_NEURONS = 2  # 2 output neurons: one for 'directed', one for 'undirected'
+    # Experiment 1: Small graphs, as per criteria
+    run_hyperparameter_search(num_nodes=4, use_noisy_data=False)
 
-    # Architecture
-    # The list defines the layers: [input_layer, hidden_layer_1, ..., output_layer]
-    # To add more hidden layers: [INPUT_NEURONS_4, 30, 10, OUTPUT_NEURONS]
-    # You can experiment with the number of neurons in the hidden layer (e.g., change 15).
-    net_4 = ntwrk.Network([INPUT_NEURONS_4, 80, OUTPUT_NEURONS])
+    # Experiment 2: Larger graphs, as per "if you have time" criteria
+    run_hyperparameter_search(num_nodes=10, use_noisy_data=False)
 
-    # Data generation and formatting
-    # We'll create a training set and a separate test set.
-    training_data_raw_4 = generateG.create_dataset(15, NUM_NODES_4)
-    test_data_raw_4 = generateG.create_dataset(50, NUM_NODES_4)
-    # The input is the flattened adjacency matrix, and the output is a vectorized result.
-    # e.g., directed (0) -> [1, 0]', undirected (1) -> [0, 1]'
-    training_inputs_4 = [np.reshape(x, (INPUT_NEURONS_4, 1)) for x, y in training_data_raw_4]
-    training_results_4 = [ntwrk.vectorize_result(y) for x, y in training_data_raw_4]
-    training_data_4 = list(zip(training_inputs_4, training_results_4))
-    test_inputs_4 = [np.reshape(x, (INPUT_NEURONS_4, 1)) for x, y in test_data_raw_4]
-    test_data_4 = list(zip(test_inputs_4, [y for x, y in test_data_raw_4]))
-    # Training
-    # Hyperparameters to experiment with:
-    # - epochs: How many times to loop through the entire training dataset.
-    # - mini_batch_size: The number of samples to process before updating weights.
-    # - eta (learning rate): How big the steps are during gradient descent.
-    epochs_4 = 15
-    cost_history_4 = net_4.SGD(training_data_4, epochs=epochs_4, mini_batch_size=10, eta=2.5, test_data=test_data_4)
-    plot_mse(cost_history_4, epochs_4, 'MSE vs. Epochs (4x4 Graphs)')
-
-
-    # param for 10x10 graphs
-
-    print("\n--- Starting experiment with 10x10 graphs ---")
-    NUM_NODES_10 = 10
-    INPUT_NEURONS_10 = NUM_NODES_10 * NUM_NODES_10
-    net_10 = ntwrk.Network([INPUT_NEURONS_10, 15, OUTPUT_NEURONS])
-    # data generation
-    training_data_raw_10 = generateG.create_dataset(35, NUM_NODES_10)
-    test_data_raw_10 = generateG.create_dataset(50, NUM_NODES_10)
-    training_inputs_10 = [np.reshape(x, (INPUT_NEURONS_10, 1)) for x, y in training_data_raw_10]
-    training_results_10 = [ntwrk.vectorize_result(y) for x, y in training_data_raw_10]
-    training_data_10 = list(zip(training_inputs_10, training_results_10))
-    test_inputs_10 = [np.reshape(x, (INPUT_NEURONS_10, 1)) for x, y in test_data_raw_10]
-    test_data_10 = list(zip(test_inputs_10, [y for x, y in test_data_raw_10]))
-    epochs_10 = 35
-    cost_history_10 = net_10.SGD(training_data_10, epochs=epochs_10, mini_batch_size=10, eta=3.0,
-                                 test_data=test_data_10)
-    plot_mse(cost_history_10, epochs_10, 'MSE vs. Epochs (10x10 Graphs)')
+    # Experiment 3: More challenging noisy data (optional)
+    # run_hyperparameter_search(num_nodes=10, use_noisy_data=True)
